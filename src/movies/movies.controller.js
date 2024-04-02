@@ -1,4 +1,4 @@
-const service = require("./movies.services");
+const service = require("./movies.service");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
 
 async function list(req, res, next) {
