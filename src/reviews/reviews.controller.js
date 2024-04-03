@@ -1,9 +1,17 @@
 const service = require("./reviews.service");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
 
-async function list(req, res) {
-  const data = await service.list(req.params.movieId);
-  res.json({ data });
+function hasMovieId(req, res, next) {
+  if (req.params.movieId) return next();
+
+  methodNotAllowed(req, res, next);
+}
+
+function noMovieId(req, res, next) {
+  if (req.params.movieId) {
+    return methodNotAllowed(req, res, next);
+  }
+  next();
 }
 
 async function reviewExists(req, res, next) {
@@ -12,7 +20,10 @@ async function reviewExists(req, res, next) {
     res.locals.review = review;
     return next();
   }
-  return next({ status: 404, message: `Review cannot be found.` });
+  next({
+    status: 404,
+    message: `Review cannot be found.`,
+  });
 }
 
 async function update(req, res) {
@@ -25,13 +36,26 @@ async function update(req, res) {
   res.json({ data });
 }
 
-async function destroy(req, res) {
+async function destroy(_, res) {
   await service.destroy(res.locals.review.review_id);
-  res.sendStatus(204).json("No Content");
+  res.sendStatus(204);
+}
+
+async function list(req, res) {
+  const data = await service.list(req.params.movieId);
+  res.json({ data });
 }
 
 module.exports = {
-  list: [asyncErrorBoundary(list)],
-  update: [asyncErrorBoundary(reviewExists), asyncErrorBoundary(update)],
-  delete: [asyncErrorBoundary(reviewExists), asyncErrorBoundary(destroy)],
+  update: [
+    noMovieId,
+    asyncErrorBoundary(reviewExists),
+    asyncErrorBoundary(update),
+  ],
+  delete: [
+    noMovieId,
+    asyncErrorBoundary(reviewExists),
+    asyncErrorBoundary(destroy),
+  ],
+  list: [hasMovieId, asyncErrorBoundary(list)],
 };
