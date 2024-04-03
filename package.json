@@ -19,9 +19,6 @@
     "test": "jest",
     "test:solution": "docker-compose build && docker-compose run --rm api npm test && docker-compose down"
   },
-  "engines": {
-    "node": ">=16.0.0<19.0.0"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -31,7 +28,7 @@
     "express": "^4.17.1",
     "knex": "^0.21.12",
     "morgan": "^1.10.0",
-    "pg": "^8.11.3",
+    "pg": "^8.4.2",
     "sqlite3": "^5.0.0"
   },
   "devDependencies": {

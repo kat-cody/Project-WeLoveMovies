@@ -1,17 +1,18 @@
-
-const service = require("./theaters.service");
+const service = require('./theaters.service');
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
 
-async function list(request, response, next) {
-  const theaters = await service.listAllTheaters();
+async function list(req, res) {
+  if (req.params.movieId) {
+    const { movieId } = req.params;
 
-  for (let theater of theaters) {
-    const movieList = await service.addMovieList(theater.theater_id);
-    theater["movies"] = movieList;
+    const data = await service.read(movieId);
+    res.json({ data });
+  } else {
+    const data = await service.list();
+    res.json({ data });
   }
-  response.json({ data: theaters });
 }
 
 module.exports = {
-  list: asyncErrorBoundary(list),
-};
+  list: asyncErrorBoundary(list)
+}
