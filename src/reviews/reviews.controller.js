@@ -1,61 +1,50 @@
 const service = require("./reviews.service");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
 
-function hasMovieId(req, res, next) {
-  if (req.params.movieId) return next();
+async function reviewExists(request, response, next) {
+     // Extract the review ID from the request parameters.
+    const {reviewId} = request.params;
+    const review = await service.read(reviewId);
 
-  methodNotAllowed(req, res, next);
+    // If the review exists, attach it to the response object and proceed to the next middleware or route handler.
+   
+    if(review) {
+        response.locals.review = review;
+        return next();
+    }
+
+    // If the review does not exist, pass an error to the next error handling middleware.
+   
+    next({
+        status: 404, 
+        message: "Review cannot be found"
+    })
 }
+  
+  async function update (request, response, next) {
+    // Create an updated review object by merging existing review data (from response.locals) with new data from the request body.
+    // Ensure the review_id is preserved.
+    const updatedReview = {
+      ...response.locals.review,
+      ...request.body.data,
+      review_id: response.locals.review.review_id,
+    };
+    
 
-function noMovieId(req, res, next) {
-  if (req.params.movieId) {
-    return methodNotAllowed(req, res, next);
+    // Update the review in the database using the service.
+    await service.update(updatedReview);
+    updatedReview.critic = await service.listCritics(updatedReview.critic_id)
+    response.json({ data: updatedReview});
   }
-  next();
-}
-
-async function reviewExists(req, res, next) {
-  const review = await service.read(req.params.reviewId);
-  if (review) {
-    res.locals.review = review;
-    return next();
+  
+  async function destroy (request, response, next) {
+    await service.destroy(
+      response.locals.review.review_id
+    );
+    response.sendStatus(204);
   }
-  next({
-    status: 404,
-    message: `Review cannot be found.`,
-  });
-}
 
-async function update(req, res) {
-  const updatedReview = {
-    ...res.locals.review,
-    ...req.body.data,
-    review_id: res.locals.review.review_id,
-  };
-  const data = await service.update(updatedReview);
-  res.json({ data });
-}
-
-async function destroy(_, res) {
-  await service.destroy(res.locals.review.review_id);
-  res.sendStatus(204);
-}
-
-async function list(req, res) {
-  const data = await service.list(req.params.movieId);
-  res.json({ data });
-}
-
-module.exports = {
-  update: [
-    noMovieId,
-    asyncErrorBoundary(reviewExists),
-    asyncErrorBoundary(update),
-  ],
-  delete: [
-    noMovieId,
-    asyncErrorBoundary(reviewExists),
-    asyncErrorBoundary(destroy),
-  ],
-  list: [hasMovieId, asyncErrorBoundary(list)],
-};
+  module.exports = {
+    update: [asyncErrorBoundary(reviewExists), asyncErrorBoundary(update)],
+    delete: [asyncErrorBoundary(reviewExists), asyncErrorBoundary(destroy)]
+  }

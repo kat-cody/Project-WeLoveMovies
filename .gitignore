@@ -1,28 +1,15 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+const { PORT = 5001 } = process.env;
 
-# dependencies
-node_modules/
-.pnp/
-.pnp.js
+const app = require("./app");
+const knex = require("./db/connection");
 
-# testing
-coverage/
+const listener = () => console.log(`Listening on Port ${PORT}!`);
 
-# production
-build/
-
-# misc
-.eslintcache
-.DS_Store
-.env
-.env.*
-!.env.sample
-.idea/
-.vscode/
-.vercel
-.screenshots/
-.qualified-attach
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+knex.migrate
+  .latest()
+  .then((migrations) => {
+    console.log("migrations", migrations);
+    app.listen(PORT, listener);
+  })
+  .catch(console.error);
+node_modules
