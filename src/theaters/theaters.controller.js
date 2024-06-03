@@ -1,18 +1,15 @@
-const service = require('./theaters.service');
-const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
+const service = require("./theaters.service");
 
-async function list(req, res) {
-  if (req.params.movieId) {
-    const { movieId } = req.params;
+// Function to list theaters
 
-    const data = await service.read(movieId);
-    res.json({ data });
-  } else {
-    const data = await service.list();
-    res.json({ data });
-  }
+async function list(req, res, next) {
+
+  const data = await service.list();
+
+  const { movieId } = req.params;
+
+  res.json({ data });
+
 }
 
-module.exports = {
-  list: asyncErrorBoundary(list)
-}
+module.exports = { list };
